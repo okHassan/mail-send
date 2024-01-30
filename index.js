@@ -20,38 +20,57 @@ app.get('/', (req, res) => {
     res.send('ok')
 })
 
-app.post('/mail', (req, res) => {
+app.post('/mail', async (req, res) => {
 
-    const sendMail = async (data) => {
+    let { name, email, subject, message } = req.body
 
-        let { name, email, subject, message } = data
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMPT_HOST,
+        port: parseInt(process.env.SMPT_PORT || '587'),
+        service: process.env.SMPT_SERVICES,
+        auth: {
+            user: process.env.SMPT_MAIL,
+            pass: process.env.SMPT_PASSWORD
+        },
+        secure: true
+    });
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMPT_HOST,
-            port: parseInt(process.env.SMPT_PORT || '587'),
-            service: process.env.SMPT_SERVICES,
-            auth: {
-                user: process.env.SMPT_MAIL,
-                pass: process.env.SMPT_PASSWORD
-            },
+    await new Promise((resolve, reject) => {
+        transporter.verify(function (error, success) {
+            if (error) {
+                console.log(error);
+                reject(error);
+            } else {
+                console.log("Server is ready to take our messages");
+                resolve(success);
+            }
         });
+    });
 
-        const mailOptions = {
-            from: process.env.SMPT_MAIL,
-            to: email,
-            subject: subject,
-            html: `
-            <h1>${name}</h1>
-            <p>${message}</p>
-            `
-        };
+    const mailOptions = {
+        from: process.env.SMPT_MAIL,
+        to: email,
+        subject: subject,
+        html: `
+        <h1>${name}</h1>
+        <p>${message}</p>
+        `
+    };
 
-        await transporter.sendMail(mailOptions)
-    }
+    await new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (err, info) => {
+            if (err) {
+                console.error(err);
+                reject(err);
+            } else {
+                console.log(info);
+                resolve(info);
+            }
+        });
+    });
+    
 
-    sendMail(req.body)
-
-    res.send('mail send')
+    res.status(200).send('mail send')
 
 })
 
