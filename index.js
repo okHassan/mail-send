@@ -48,8 +48,8 @@ app.post('/mail', async (req, res) => {
     });
 
     const mailOptions = {
-        from: process.env.SMPT_MAIL,
-        to: email,
+        from: email,
+        to: process.env.SMPT_MAIL,
         subject: subject,
         html: `
         <h1>${name}</h1>
